@@ -12,7 +12,7 @@ export default function Contact() {
       </Reveal>
       <Reveal delay={100}>
         <p className="mt-6 max-w-2xl">
-          For any inqueries feel free to send me a message
+          For any inquiries feel free to send me a message
         </p>
         <a className="mt-4 inline-block" href={`mailto:${email}`}>
           {email}
