@@ -22,6 +22,8 @@ const techItemBase = cn(
   "hover:border-primary hover:bg-primary/5 hover:text-primary",
 );
 
+const hoverSpring = { type: "spring", stiffness: 300, damping: 22 } as const;
+
 function TechItemContent({ tech, large }: { tech: Tech; large?: boolean }) {
   const iconSize = large ? "size-7" : "size-5";
   return tech.icon ? (
@@ -59,19 +61,19 @@ function TechGrid({ items, large }: { items: Tech[]; large?: boolean }) {
   return (
     <ul ref={ref} className="flex max-w-2xl flex-wrap gap-2">
       {items.map((t, i) => (
-        <li
+        <m.li
           key={t.name}
           style={inView ? { animationDelay: `${i * 45}ms` } : undefined}
+          whileHover={{ y: -6, transition: hoverSpring }}
           className={cn(
             techItemBase,
-            "transition-[transform,color,border-color,background-color] hover:-translate-y-0.5",
             inView
               ? "animate-in fade-in slide-in-from-left-3 fill-mode-both duration-500 ease-out"
               : "opacity-0",
           )}
         >
           <TechItemContent tech={t} large={large} />
-        </li>
+        </m.li>
       ))}
     </ul>
   );
@@ -112,7 +114,7 @@ function LanguagesGrid({
             <m.li
               key={t.name}
               variants={itemVariants}
-              whileHover={{ y: -2 }}
+              whileHover={{ y: -6, transition: hoverSpring }}
               transition={{ duration: 0.28, ease: "easeOut" }}
               className={techItemBase}
             >

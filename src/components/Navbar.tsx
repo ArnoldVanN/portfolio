@@ -39,40 +39,40 @@ export default function Navbar() {
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-sm">
-      <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3 sm:px-8">
-        <a href="#top" className="flex items-center gap-2 font-medium">
-          <img src={logo} alt="" className="size-6 select-none" />
-          Arno Van Nieuwenhuyzen
-        </a>
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3 sm:px-8">
+          <a href="#top" className="flex items-center gap-2 font-medium">
+            <img src={logo} alt="" className="size-6 select-none" />
+            Arno Van Nieuwenhuyzen
+          </a>
 
-        <nav className="hidden items-center gap-6 md:flex">
-          <ul className="flex gap-6">
-            {nav.map((item) => (
-              <li key={item.href}>
-                <a href={item.href}>{item.label}</a>
-              </li>
-            ))}
-          </ul>
-          <ThemeToggle />
-        </nav>
+          <nav className="hidden items-center gap-6 md:flex">
+            <ul className="flex gap-6">
+              {nav.map((item) => (
+                <li key={item.href}>
+                  <a href={item.href}>{item.label}</a>
+                </li>
+              ))}
+            </ul>
+            <ThemeToggle />
+          </nav>
 
-        <div className="flex items-center md:hidden">
-          <ThemeToggle />
-          <button
-            type="button"
-            onClick={() => setIsOpen((v) => !v)}
-            aria-label="Toggle menu"
-            aria-expanded={isOpen}
-            className="relative z-50 block p-4"
-          >
-            {isOpen ? (
-              <AiOutlineClose size={20} />
-            ) : (
-              <AiOutlineMenu size={20} />
-            )}
-          </button>
+          <div className="flex items-center md:hidden">
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={() => setIsOpen((v) => !v)}
+              aria-label="Toggle menu"
+              aria-expanded={isOpen}
+              className="relative z-50 block p-4"
+            >
+              {isOpen ? (
+                <AiOutlineClose size={20} />
+              ) : (
+                <AiOutlineMenu size={20} />
+              )}
+            </button>
+          </div>
         </div>
-      </div>
       </header>
 
       <div className="pointer-events-none fixed inset-0 z-40 overflow-hidden md:hidden">

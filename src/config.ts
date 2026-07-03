@@ -7,8 +7,8 @@ export const nav = [
 
 export const about = {
   paragraphs: [
-    "I am a self-taught Full-Stack developer from Belgium.",
-    "I'm well versed in the entire development process from architecture design to CI, monitoring and maintenance. I build anything from CLI tools to distributed systems, applying DevOps and security best practices",
+    "I am a Full-Stack developer from Belgium.",
+    "Well versed in the entire development process from architecture design to CI, monitoring and maintenance. I build anything from CLI tools to distributed systems, applying DevOps and security best practices",
   ],
 } as const;
 

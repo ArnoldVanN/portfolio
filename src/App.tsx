@@ -1,5 +1,6 @@
 import { LazyMotion } from "motion/react";
 
+import Background from "@/components/Background";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Hero from "@/sections/Hero";
@@ -14,6 +15,7 @@ const loadFeatures = () =>
 function App() {
   return (
     <LazyMotion features={loadFeatures} strict>
+      <Background />
       <Navbar />
       <div className="mx-auto w-full max-w-5xl px-4 sm:px-8">
         <main>
