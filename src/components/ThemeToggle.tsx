@@ -1,26 +1,25 @@
 import { useEffect, useState } from "react";
 import { Switch } from "./ui/switch";
 
-function getInitial() {
-  const stored = localStorage.getItem("theme");
-  if (stored) return stored === "dark";
-  return matchMedia("(prefers-color-scheme: dark)").matches;
-}
-
 export default function ThemeToggle() {
-  const [dark, setDark] = useState(getInitial);
+  // The inline script in root.tsx already sets the class before paint
+  const [dark, setDark] = useState(false);
 
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", dark);
-    localStorage.setItem("theme", dark ? "dark" : "light");
-  }, [dark]);
+    setDark(document.documentElement.classList.contains("dark"));
+  }, []);
+
+  const toggle = (next: boolean) => {
+    setDark(next);
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("theme", next ? "dark" : "light");
+  };
 
   return (
     <Switch
-      onCheckedChange={() => setDark((d) => !d)}
+      checked={dark}
+      onCheckedChange={toggle}
       aria-label="Toggle dark mode"
-    >
-      {dark ? "Light" : "Dark"}
-    </Switch>
+    />
   );
 }

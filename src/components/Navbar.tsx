@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { type MouseEvent, useEffect, useState } from "react";
+import { Link, useLocation } from "react-router";
 import { AiOutlineClose, AiOutlineMenu } from "react-icons/ai";
 import { AnimatePresence, m } from "motion/react";
 import { nav } from "@/config";
@@ -7,24 +8,17 @@ import logo from "@/assets/logo.png";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { pathname } = useLocation();
 
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const anchor = target.closest("a");
-      if (anchor && anchor.getAttribute("href")?.startsWith("#")) {
-        e.preventDefault();
-        const id = anchor.getAttribute("href")!.slice(1);
-        const el = document.getElementById(id);
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth" });
-        }
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
-  }, []);
+  // On the home page, section links scroll smoothly instead of navigating.
+  const handleNavClick = (e: MouseEvent<HTMLAnchorElement>, href: string) => {
+    setIsOpen(false);
+    if (pathname !== "/" || !href.startsWith("/#")) return;
+    const el = document.getElementById(href.slice(2));
+    if (!el) return;
+    e.preventDefault();
+    el.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -40,16 +34,25 @@ export default function Navbar() {
     <>
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-sm">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3 sm:px-8">
-          <a href="#top" className="flex items-center gap-2 font-medium">
+          <Link
+            to="/#top"
+            onClick={(e) => handleNavClick(e, "/#top")}
+            className="flex items-center gap-2 font-medium"
+          >
             <img src={logo} alt="" className="size-6 select-none" />
             Arno Van Nieuwenhuyzen
-          </a>
+          </Link>
 
           <nav className="hidden items-center gap-6 md:flex">
             <ul className="flex gap-6">
               {nav.map((item) => (
                 <li key={item.href}>
-                  <a href={item.href}>{item.label}</a>
+                  <Link
+                    to={item.href}
+                    onClick={(e) => handleNavClick(e, item.href)}
+                  >
+                    {item.label}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -98,12 +101,13 @@ export default function Navbar() {
                   <ul className="w-full">
                     {nav.map((item) => (
                       <li key={item.href} className="py-2">
-                        <a
-                          href={item.href}
+                        <Link
+                          to={item.href}
+                          onClick={(e) => handleNavClick(e, item.href)}
                           className="flex h-12 items-center justify-center p-2 text-lg hover:bg-muted"
                         >
                           {item.label}
-                        </a>
+                        </Link>
                       </li>
                     ))}
                   </ul>

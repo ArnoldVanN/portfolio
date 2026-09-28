@@ -16,7 +16,7 @@ RUN pnpm install --frozen-lockfile && pnpm run build
 FROM nginxinc/nginx-unprivileged:alpine
 
 USER root
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/build/client /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/nginx.conf
 USER 101
 

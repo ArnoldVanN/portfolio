@@ -57,3 +57,5 @@ Disallow: /
 
 User-agent: ImagesiftBot
 Disallow: /
+
+Sitemap: https://arnovannieuwenhuyzen.com/sitemap.xml

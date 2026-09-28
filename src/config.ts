@@ -1,8 +1,9 @@
 export const nav = [
-  { label: "About", href: "#about" },
-  { label: "Stack", href: "#stack" },
-  { label: "Projects", href: "#projects" },
-  { label: "Contact", href: "#contact" },
+  { label: "About", href: "/#about" },
+  { label: "Stack", href: "/#stack" },
+  { label: "Projects", href: "/#projects" },
+  { label: "Contact", href: "/#contact" },
+  { label: "Blog", href: "/blog" },
 ] as const;
 
 export const about = {
@@ -134,6 +135,18 @@ export const databases: Tech[] = [
 
 export const socials = [
   { label: "GitHub", href: "https://github.com/ArnoldVanN" },
-  { label: "LinkedIn", href: "https://linkedin.com/arno-van-nieuwenhuyzen" },
+  {
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/in/arno-van-nieuwenhuyzen",
+  },
   { label: "Email", href: "mailto:arnovannieuwenhuyzen@outlook.com" },
 ] as const;
+
+export const site = {
+  url: "https://arnovannieuwenhuyzen.com",
+  name: "Arno Van Nieuwenhuyzen",
+  defaultImage: {
+    src: "/og-default.png",
+    alt: "Arno Van Nieuwenhuyzen — Full-stack developer",
+  },
+} as const;
