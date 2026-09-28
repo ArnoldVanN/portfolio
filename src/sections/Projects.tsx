@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Reveal from "@/components/Reveal";
+import ZoomImage from "@/components/ZoomImage";
 import { projects } from "@/config";
 
 export default function Projects() {
@@ -33,6 +34,13 @@ export default function Projects() {
                   <CardDescription>{project.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-1 flex-col">
+                  {project.image && (
+                    <ZoomImage
+                      src={project.image.src}
+                      alt={project.image.alt}
+                      className="mb-4"
+                    />
+                  )}
                   <ul className="flex flex-wrap gap-2 pb-2">
                     {project.tags.map((tag) => (
                       <li key={tag}>

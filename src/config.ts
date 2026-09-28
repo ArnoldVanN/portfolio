@@ -17,6 +17,7 @@ export type Project = {
   description: string;
   tags: string[];
   href?: string;
+  image?: { src: string; alt: string };
 };
 
 export const projects: Project[] = [
@@ -24,20 +25,32 @@ export const projects: Project[] = [
     title: "Aquila Hosting",
     description:
       "A commercial game server hosting platform currently in operation",
-    tags: ["Go", "TypeScript", "Kubernetes"],
+    tags: ["Go", "TypeScript", "Kubernetes", "Next.js"],
     href: "https://aquilahosting.com",
+    image: {
+      src: "/projects/aquila-hosting.webp",
+      alt: "Aquila Hosting server dashboard with CPU and memory usage charts",
+    },
   },
   {
     title: "Monotrack",
-    description: "A tool to ease the pains of CI in a monorepo",
-    tags: ["Go", "CI/CD"],
+    description: "A CLI tool to ease the pains of CI in a monorepo",
+    tags: ["Go", "CI/CD", "GitHub Actions"],
     href: "https://github.com/arnoldvann/monotrack",
+    image: {
+      src: "/projects/monotrack.webp",
+      alt: "GitHub pull request checks from a Monotrack-driven CI pipeline",
+    },
   },
   {
     title: "Artist portfolio",
-    description: "A simple but elegant static site",
-    tags: ["React", "Vite", "GitHub Actions"],
+    description: "A static site built with React and Tailwind CSS",
+    tags: ["React", "Tailwind CSS", "Vite", "GitHub Actions"],
     href: "https://greetvandewynckele.com",
+    image: {
+      src: "/projects/artist-portfolio.webp",
+      alt: "Preview of greetvandewynckele.com",
+    },
   },
 ];
 
@@ -66,7 +79,7 @@ export const programming: Lang[] = [
   },
   { name: "React", kind: ["Frontend"], icon: "/icons/react.svg" },
   { name: "Next.js", kind: ["Frontend", "Backend"], icon: "/icons/nextjs.svg" },
-  { name: "Tailwind", kind: ["Frontend"], icon: "/icons/tailwindcss.svg" },
+  { name: "Tailwind CSS", kind: ["Frontend"], icon: "/icons/tailwindcss.svg" },
   { name: "Git", kind: [], icon: "/icons/git.svg" },
 ];
 
