@@ -8,7 +8,7 @@ image:
   alt: Game servers active on Aquila Hosting
 ---
 
-This post goes over running game servers at scale on Kubernetes: the main components, how players reach their servers, and the architectural decisions I had to make along the way.
+This post goes over running game servers at scale on Kubernetes: the main components, how players reach their servers, and the architectural decisions I made.
 
 ## Why Kubernetes
 
@@ -32,41 +32,40 @@ The following components make up the most integral parts of the architecture.
 
 The api is relatively simple. It's the only thing exposed to the internet besides the frontend and gs-proxy, and its job is mostly auth, validation, and storing customer data in Postgres.
 
-What's more interesting is what it *doesn't* do: it never talks to Kubernetes. It stores what should exist, and asks the agent to make it happen. The `GameServer` resource is the source of truth for what's actually running, and when the dashboard wants to know a server's state, the api asks the agent, which reads it straight off that resource. This keeps the api completely unaware of pods, nodes or clusters, which is what made running game servers in multiple zones fairly painless later on. The api just needs to know which agent to forward a request to.
+It never talks to Kubernetes. It stores what should exist, and asks the agent to make it happen. The `GameServer` resource is the source of truth for what's actually running, and when the dashboard wants to know a server's state, the api asks the agent, which reads it straight off that resource. This keeps the api completely unaware of pods, nodes or clusters, which is what made running game servers in multiple zones fairly painless later on. The api just needs to know which agent to forward a request to.
 
 It listens on two ports: a public one that accepts user sessions from the frontend, and an internal one. Anything sensitive, like provisioning a server after a payment, only exists on the internal port, so it isn't reachable from the internet at all.
 
 ## The agent
 
-The agent is the api's hands inside a cluster. Every cluster runs one, and it's the only component besides gs-operator that's allowed to touch `GameServer` resources. The api never gets cluster credentials, so the api being compromised doesn't directly mean the cluster is compromised as well.
+The agent is the api's entrypoint to a cluster. Every cluster runs one, and it's the only component besides gs-operator that's allowed to touch `GameServer` resources.
 
 When a server gets provisioned, the api only sends it the server IDs. The agent fetches the records from the api and turns them into `GameServer` specs. From then on, every action on the dashboard, like starting or stopping a server, modifying ports or launch args, or setting up proxy forwarding, is the agent patching that resource and letting gs-operator do the rest.
 
-The rest of what it does needs to happen from inside the cluster:
+Some features still need cluster access, but don't involve gs-operator:
 
-- **Console and logs**: sending commands to the server and streaming its logs back to the dashboard.
-- **Files and backups**: finding the file-server pod that belongs to a game server and forwarding requests to it.
+- **Console and logs**: sending commands to the server over RCON, and streaming the pod's logs back to the dashboard.
+- **Files and backups**: finding the game server's file-server pod and forwarding requests to it.
 - **Game stats**: every 30 seconds it polls each server for things like player count and TPS, and exposes them as Prometheus metrics for the dashboard charts.
-
 
 ## gs-operator
 
-gs-operator is where most of the actual Kubernetes work happens. It's built with Kubebuilder and reconciles a single custom resource: `GameServer`. That resource describes everything about a server: the game, loader and version, its ports, how much memory and storage the plan includes, whether it should be running, and which proxy network it's part of, if any (more on those later). Everything else in the cluster is derived from it.
+gs-operator is where most of the actual Kubernetes work happens. It's a custom [Kubernetes Operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) built with Kubebuilder and reconciles a single custom resource: `GameServer`. That resource describes everything about a server: the game, loader and version, its ports, how much memory and storage the plan includes, whether it should be running, and which proxy network it's part of, if any (more on those later).
 
 Each reconcile walks through the same steps in order: pick a node, allocate ports, make sure the volume exists, generate config and credentials, set up networking, and finally create the pod and its file-server.
 
 A few decisions worth pointing out:
 
 - **It schedules pods itself.** The operator picks a node based on memory and CPU requests and pins the pod to it, instead of leaving it to the kube-scheduler. Knowing the node up front also matters for the file-server, which has to land on that same node (more on that below). If there's no capacity, the server is parked in an `Error` state and the operator watches nodes, so the server gets retried as soon as a node is added or has room again.
-- **Ports come from one pool for the whole cluster.** Every server gets ports that are unique across the cluster, not just on its node. That way a server keeps its port when it moves to a different node, and gs-proxy can map a port straight to a pod.
+- **Ports come from one pool for the whole cluster.** Every server gets ports within a pre-defined range that are unique across the cluster, not just on its node. That way a server keeps its port when it moves to a different node, and gs-proxy can map a port straight to a pod.
 - **Plain pods instead of Deployments or StatefulSets.** In our case a game server is a single stateful process that you never want two of. Its pod is owned directly by the `GameServer`. Stopping a server deletes the pod and keeps the volume, and changing its config marks the pod as drifted, which gets it replaced right away. With its stable identity and persistent storage, a `GameServer` effectively behaves like a single-replica StatefulSet, except the operator decides which node it runs on and when it gets replaced.
 - **Requests are a percentage of limits.** Plans are sold on memory, but most servers don't use their whole allocation all the time. So the operator sets requests to a configurable percentage of the limits, which lets a node fit more servers while each one can still burst up to what it paid for.
 
-A validating webhook sits in front of all of this, so invalid combinations (like an unsupported loader for a proxy network) are rejected before they ever reach the reconciler.
+A validating webhook runs on each update to a `GameServer` CR, so invalid combinations (like an unsupported loader for a proxy network) are rejected before they ever reach the reconciler.
 
 ### Why not Agones?
 
-Agones was the first option I looked into, but it seemed better suited for short-lived game servers with little persistence. It also clashed with how I wanted to expose game servers. Agones gives each server a port on whichever node it lands on, and players connect to that node directly. If the node goes down, the server isn't rescheduled but replaced by a new one, with a new address. That's fine when a matchmaker hands out a fresh address for every match, but not when players save a server's address and expect it to remain the same. I did base the `GameServer` CRD on theirs, though it has since gone through a lot of changes to make it work with a wide range of games.
+[Agones](https://agones.dev/site/) was the first option I looked into, but it seemed better suited for short-lived game servers with little persistence. It also clashed with how I wanted to expose game servers. Agones gives each server a `hostPort` on whichever node it lands on, and players connect to that node directly. If the node goes down, the server comes back on a different node, so its IP changes, and with dynamic ports its port does too. That's fine when a matchmaker hands out a fresh address for every match, but not when players save a server's address. Keeping addresses stable meant building my own proxy in front anyway, and at that point Agones wasn't adding much. I did base the `GameServer` CRD on theirs, though it has since gone through a lot of changes to make it work with a wide range of games.
 
 ## gs-proxy
 
@@ -80,6 +79,9 @@ It handles:
 - **Addresses without a port.** Minecraft players expect to type `myserver.eu.play.aquilahosting.com` without a port number. Minecraft sends the address the player typed in its first packet, so gs-proxy listens on the default port, reads that packet, looks up which server the name belongs to, and forwards the connection there. This also works for custom domains users point at us.
 - **Allowed sources.** Users can restrict which IPs may connect to their server. Because gs-proxy terminates the connection and dials the pod itself, the pod only ever sees the node's address, not the player's. So gs-proxy is the only place this can be enforced.
 - **The file-server's SFTP port** goes through gs-proxy as well, but points at the file-server pod instead of the game server, so it stays reachable while the server is stopped.
+- **Player count estimates.** Not every game exposes its player count, but every player connects through gs-proxy. It counts active TCP connections and UDP flows per server and exposes them as Prometheus metrics, which gives a decent estimate when the game can't report one itself.
+
+I also plan to use gs-proxy to scale file-servers to zero, and only start one when a connection comes in on its SFTP port.
 
 ## gs-init
 
@@ -90,7 +92,7 @@ This is needed because the game images install things, but never clean anything 
 It also handles a few other things that have to happen before the game starts:
 
 - **Resets.** Resetting a world, or wiping the whole volume, is requested from the dashboard and carried out by gs-init on the next boot, when nothing has the files open.
-- **Plugins.** Plugins from Hangar are resolved to the newest build matching the server's version, so a restart is enough to update them.
+- **Plugins.** Plugins from Hangar, PaperMC's plugin repository, are resolved to the newest build matching the server's version, so a restart is enough to update them.
 - **Settings users shouldn't be able to break.** Users can edit their config files, but some settings, like the ones that let a server trust logins from its proxy, are security-relevant. gs-init writes those again on every boot and leaves everything else the user changed alone.
 - **Proxy config.** For a proxy network, it writes the proxy's list of backends and which hostname goes where.
 
@@ -102,7 +104,7 @@ Every game server gets a companion pod running the file-server. The dashboard's 
 
 The interesting part is that it mounts the exact same volume as the game server. That volume is `ReadWriteOnce`, which despite the name doesn't mean one *pod*, it means one *node*. So as long as both pods run on the same node, they can share it. gs-operator already picks the game server's node itself, so it simply pins the file-server to that same node.
 
-Being a separate pod instead of a sidecar lets the file-server keep running when the game server is stopped. That way you can still edit configs, upload a world or make a backup while the game server pod is off.
+Being a separate pod instead of a sidecar lets the file-server keep running when the game server is stopped. That way users can still edit configs, upload a world or make a backup while the game server pod is off.
 
 ## Proxy networks
 
@@ -111,3 +113,9 @@ Most servers on Aquila are standalone: one server, one address, one world. But M
 That wiring is where Kubernetes and the CNI do the heavy lifting. gs-operator gives every backend its own `Service`, so the proxy points at a stable address instead of a pod IP that changes on every restart. That way the proxy only needs a config update, and a restart, when a backend is added or removed, not every time one restarts. Network policies make sure a backend only accepts traffic from its own proxy.
 
 Proxy networks are Minecraft-only for now, but they were the first time a `GameServer` needed to know about other `GameServer`s. This work is what I plan to base **fleets** off of. Instead of a handful of persistent servers someone rents one at a time, a fleet is a large set of identical servers, scaled up and down as needed. That's useful for games with short-lived match servers, or companies that want to run their own set of servers for a game without managing the infrastructure themselves.
+
+## To sum it up
+
+Most of this architecture comes down to one split: Postgres holds a server's desired state, and the `GameServer` resource holds what's actually running. The dashboard asks for each separately, and only puts them together when it renders. The api never has to know about pods or nodes, and gs-operator, gs-proxy and the agent never have to know about customers or billing. That's what made adding multiple zones, proxy networks and soon fleets a matter of extending one resource instead of reworking the platform.
+
+<p className="text-xs text-muted-foreground">And Fleets are, ironically, exactly the kind of workload Agones was built for.</p>

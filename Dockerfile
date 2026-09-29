@@ -1,12 +1,10 @@
 # syntax=docker/dockerfile:1
-FROM node:26-slim AS builder
+FROM --platform=$BUILDPLATFORM node:26-slim AS builder
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
-RUN npm install -g corepack@latest && \
-    corepack enable && \
-    pnpm --version
+RUN npm install -g corepack@latest && corepack enable
 
 WORKDIR /app
 COPY . .
