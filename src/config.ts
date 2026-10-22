@@ -34,6 +34,17 @@ export const projects: Project[] = [
     },
   },
   {
+    title: "Home Ops",
+    description:
+      "GitOps-managed home Kubernetes cluster hosting my personal sites",
+    tags: ["Kubernetes", "Flux", "GitOps", "Tailscale"],
+    href: "https://github.com/ArnoldVanN/home-ops",
+    image: {
+      src: "/projects/home-ops.webp",
+      alt: "Status page showing uptime of the sites hosted on home-ops",
+    },
+  },
+  {
     title: "Monotrack",
     description: "A CLI tool to ease the pains of CI in a monorepo",
     tags: ["Go", "CI/CD", "GitHub Actions"],
