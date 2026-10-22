@@ -89,7 +89,7 @@ export default function BlogPost({ loaderData }: Route.ComponentProps) {
           className="mb-10 aspect-[1200/630] w-full object-cover ring-1 ring-foreground/10"
         />
       )}
-      <div className="prose max-w-none dark:prose-invert prose-a:text-primary prose-pre:rounded-none prose-code:before:content-none prose-code:after:content-none">
+      <div className="prose max-w-none dark:prose-invert prose-a:text-primary dark:prose-a:text-purple-500 prose-pre:rounded-none prose-code:before:content-none prose-code:after:content-none">
         <Content />
       </div>
     </article>

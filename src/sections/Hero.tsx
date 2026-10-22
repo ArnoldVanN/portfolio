@@ -13,9 +13,6 @@ export default function Hero() {
           className="mx-auto mb-6 size-28 select-none"
         />
       </Reveal>
-      <Reveal from="top" delay={120}>
-        <h1 className="text-5xl font-semibold tracking-tight">Aquila</h1>
-      </Reveal>
       <Reveal from="top" delay={200}>
         <Badge variant="secondary" className="mt-4">
           <span className="relative flex size-2 mr-1">

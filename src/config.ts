@@ -9,7 +9,7 @@ export const nav = [
 export const about = {
   paragraphs: [
     "I am a Full-Stack developer from Belgium.",
-    "Well versed in the entire development process from architecture design to CI, monitoring and maintenance. I build anything from CLI tools to distributed systems, applying DevOps and security best practices",
+    "Well versed in the entire development process from architecture design to CI, monitoring and maintenance. I build anything from CLI tools to distributed systems, applying DevOps and security best practices.",
   ],
 } as const;
 
@@ -41,6 +41,16 @@ export const projects: Project[] = [
     image: {
       src: "/projects/monotrack.webp",
       alt: "GitHub pull request checks from a Monotrack-driven CI pipeline",
+    },
+  },
+  {
+    title: "Dotfiles Script",
+    description: "Idempotent one-shot dotfiles installation script for Linux",
+    tags: ["Bash", "Linux"],
+    href: "https://github.com/ArnoldVanN/dotfiles",
+    image: {
+      src: "/projects/dotfiles.webp",
+      alt: "Output of dotfiles install script",
     },
   },
   {

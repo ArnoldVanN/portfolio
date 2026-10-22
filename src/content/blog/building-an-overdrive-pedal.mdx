@@ -1,0 +1,177 @@
+---
+title: Building an overdrive pedal
+description: The little magic boxes that make electric guitars sound cool
+date: "2026-10-22"
+tags: [DIY, Guitar Pedals, Electronics]
+image:
+  src: /blog/building-an-overdrive-pedal.jpg
+  alt: PCB layout of the Aquila TS9 overdrive pedal
+---
+
+import TableOfContents from "@/components/TableOfContents";
+
+I've been playing guitar for about 2–3 years, and my amp with built-in digital effects has been great so far. But for a while now I've been wanting more control over effects, and the types of effects in general. So I had the genius idea of spending hundreds on the tools and materials needed to build a guitar pedal rather than just buying some second-hand. This was my experience building a pedal for the first time, what I learned, what I found interesting, and what I thought might be helpful for someone else wanting to start building pedals.
+
+<TableOfContents>
+
+- [The materials](#the-materials)
+- [The circuit](#the-circuit)
+  - [The voltage divider](#the-voltage-divider)
+  - [The input and output buffers](#the-input-and-output-buffers)
+  - [The gain stage](#the-gain-stage)
+  - [Tone and volume](#tone-and-volume)
+- [The PCB](#the-pcb)
+- [The soldering](#the-soldering)
+- [The enclosure](#the-enclosure)
+- [The sound](#the-sound)
+
+</TableOfContents>
+
+## The materials
+Having no clue what I was doing, I basically picked a random pedal that I thought sounded cool, and that could make my tone sound more "gritty". The Ibanez TS9 is the pedal I ended up choosing, which turned out to be yet another genius idea (it wasn't).
+
+The base TS9 schematic contains 35 components, not including any of the external components like jacks or switches, or 41 with a few power supply mods. This isn't the craziest number of components you could have but there definitely exist simpler circuits for a complete beginner.
+
+I started by learning the names of the components I saw on the schematic and their purpose, and how to even read schematics in the first place, which was a fun but lengthy process.
+Meanwhile, I found out there are a few ways to build DIY pedals.
+
+- Printed Circuit Boards
+- Stripboard / Veroboard
+- Perfboard / Protoboard
+- Point-to-point / turret board
+
+I'd seen these techniques used in videos from a few different creators and was unsure about which one to choose. Stripboard seemed like it would do the job, but after finding [this handy guide](https://aionfx.com/app/files/docs/stratus_legacy_documentation.pdf) on building a TS9 clone and my inability to resist the beauty of a clean-looking PCB, my choice was made.
+
+At this point I didn't have any components yet though. To get them, I had to find a supplier, learn to filter through their near-endless component lists with their endless filter options, and translate the values of the schematic across formats and notations.
+
+On top of this, there are also some generic components you need which usually aren't included on the schematic: the input/output jacks, power jack and cable, stomp switches, and of course the enclosure.
+
+## The circuit
+
+![Schematic of the TS9 overdrive circuit in EasyEDA](/blog/ts9/schematic.webp)
+
+### The voltage divider
+
+The signal coming from the guitar is AC, which means it can be positive or negative around 0V. Since the pedal runs on a single 9V DC supply, its only rails are 9V and 0V (ground). Active components (transistors, op-amps, ICs) can only output voltages between their supply rails. Centered on 0V, the negative half of the audio signal would be clipped off. To prevent this, we center the signal on about 4.5V, using a voltage divider to create a "virtual ground" (Vr).
+
+Setting the DC voltage an active component works around is called biasing. The bias voltage is created by R16/R17 on the schematic, with C12 (10µ) holding Vr steady, so that for the audio signal it just behaves as ground.
+
+### The input and output buffers
+I won't pretend to understand impedance yet, but I do know that pedals generally have a high input impedance and a low output impedance.
+
+The TS9 has a buffer at both its input and output. Both are emitter followers (also known as common-collectors). They use NPN transistors and have high input impedance and low output impedance, have a voltage gain of ~1, and a larger current and power gain. So they basically create a "strong" copy of a "weak" input signal.
+
+The input buffer prevents signal loss from the guitar or previous pedal. In front of it, C1 blocks DC from the input, and R2 biases Q1 to Vr.
+
+The output buffer has a low output impedance, so it can handle a long cable and send the signal cleanly to the amp or next pedal.
+
+<div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", alignItems: "center" }}>
+  <img
+    src="/blog/ts9/input-buffer.webp"
+    alt="The input buffer section of the TS9 schematic: C1, R1, R2, Q1 and R3"
+    style={{ flex: 1, minWidth: "12rem" }}
+  />
+  <img
+    src="/blog/ts9/output-buffer.webp"
+    alt="The output buffer section of the TS9 schematic: C8, R12, Q2, R13, R14, C9 and R15"
+    style={{ flex: 1, minWidth: "12rem" }}
+  />
+</div>
+
+### The gain stage
+
+U1.1 is the first stage of the dual op-amp. It's the gain and clipping stage, with R5, the DRIVE pot, C3 and two diodes in its negative feedback loop, and C4/R6 running from pin 2 to Vr.
+
+<img
+  src="/blog/ts9/clipping.webp"
+  alt="The gain and clipping stage of the TS9 schematic: U1.1 with R4, R5, R6, C3, C4, D1, D2 and the DRIVE pot"
+  style={{ maxWidth: "15rem", marginInline: "auto" }}
+/>
+
+The op-amp tries to keep the voltages at pins 2 and 3 equal, and the feedback loop works as a voltage divider, so pin 2 only gets a fraction of the output. The smaller that fraction, the more the op-amp has to amplify. DRIVE changes that fraction, and so the gain: 1 + (R5 + DRIVE) / R6, which works out to roughly 12× to 118× (about 21 to 41dB) for mids and highs.
+
+D1 and D2 do the clipping. Once the signal swings more than about 0.6V around Vr, one of them starts conducting and the gain drops at the peaks. Turning up the DRIVE increases the gain, which means more of the waveform reaches 0.6V and gets flattened, so DRIVE also controls how much the signal gets clipped.
+
+C4 and R6 let higher frequencies through to Vr, so pin 2 receives a smaller fraction of those frequencies and the op-amp amplifies them more. Below 1 / (2π × R6 × C4), around 720Hz, this doesn't happen, so the bass gets both boosted less and clipped less. C3, which is in parallel with R5 and DRIVE, lets the highest frequencies back to pin 2 more easily, so they're amplified less, which keeps the distortion from getting harsh.
+
+### Tone and volume
+
+<img
+  src="/blog/ts9/tone-volume.webp"
+  alt="The tone and volume section of the TS9 schematic: R7, C5, R8, U1.2, TONE, C6, R9, R10, C7, R11 and VOL"
+  style={{ width: "50%", marginInline: "auto" }}
+/>
+
+R7 and C5 form a low-pass filter at 1 / (2π × R7 × C5), around 720Hz, that takes the fizz off the clipped signal, which is a big part of the TS9's mid-heavy sound. The TONE pot sits between U1.2's two inputs and drains treble to ground through C6. Turned toward the + input, it cuts treble before the op-amp. Turned toward the − input, it drains treble from the feedback instead, so the op-amp boosts treble to compensate. VOL is a simple voltage divider that sets the output level.
+
+## The PCB
+
+Designing the PCB involved choosing EDA (Electronic Design Automation) software, learning how to use said software, replicating the schematic in the EDA application and converting it to a PCB layout.
+I went with EasyEDA since it's a popular and mature tool. But I've since tried out KiCad and actually prefer its footprint library and footprint assignment system. It was also more intuitive than EasyEDA. The only things I thought were better in EasyEDA were the way tracks in the PCB editor are automatically aligned when drawing, and the keybinds made a bit more sense.
+
+Generating the PCB simply creates a new file which contains a square (the borders of the board) and a pile of your components. These need to be arranged on the PCB and then connected using "tracks", which is the fun part!
+
+Luckily I was able to ask for some help for this step from an online community of guitar pedal builders who taught me some important things to keep in mind:
+- Tracks should be sized relative to the current that will be going through them.
+- The ground plane needs adequate clearance from the tracks.
+- Parts of the ground plane that might have gotten separated by the automatic pouring process in the EDA need to be connected with adequately sized connections at several points, so every part of the circuit has a short, low-impedance path to ground, which helps keep noise down.
+- Tracks on different layers of the board should intersect at 90° where possible, and shouldn't run parallel close to each other.
+
+After exporting the file and sending it to a manufacturer, I received my pretty boards in the mail a few weeks later.
+
+## The soldering
+
+Soldering seems simple at first glance, but it's surprisingly hard to get a clean-looking connection, especially on smaller components.
+Some of the things that helped me most were pre-tinning the tip of the iron, cleaning it after every few pads and re-tinning, using solder with flux, and heating the pads and leads to melt the solder there instead of on the iron.
+
+Even with all of this it's still difficult to get the right amount of solder on the pad. Sometimes it doesn't flow all the way through, like with small through-holes or with big leads that leave little margin with the pad. Some of the pads were also extremely small, like the op-amp's, because I forgot to carefully select footprints for every component, which I believe KiCad forces you to do.
+
+Luckily it seems like you can get away with this as I have not experienced any issues with the PCB solder joints since testing the complete build.
+
+<img
+  src="/blog/ts9/assembled.webp"
+  alt="The soldered custom TS9 PCB with all components populated"
+  style={{ maxWidth: "28rem", marginInline: "auto" }}
+/>
+
+## The enclosure
+
+I hadn't considered the fact that the original TS9's PCB is mounted directly to the case using the potentiometers, the through-holes for which are aligned nicely on the PCB. I did not do this on mine and neither did I put mounting holes in the PCB...
+
+After much consideration I decided to just slap some electrical tape between the enclosure and PCB and call it a day. In my case the pressure of the wires keeps the PCB in place.
+
+This will, however, be the last time I *willingly* wire pots to the PCB instead of mounting them directly to it, since literally all the issues I've had so far have been caused by me messing up the potentiometer wiring: a loose wire, lugs 1 and 3 switched around, and another loose wire.
+
+Might be hard to tell from the image, but this is where I had lugs 1 and 3 switched around on the tone knob, which made the tone darker when turning clockwise and brighter when turning counter-clockwise instead of the opposite.
+
+<img
+  src="/blog/ts9/wiring.webp"
+  alt="The TS9 PCB wired to the pots, jacks and footswitch inside the enclosure"
+  style={{ maxWidth: "28rem", marginInline: "auto" }}
+/>
+
+## The sound
+
+Since I'm using a true-bypass switch, the pedal off sounds exactly the same as plugging straight into the amp. With the pedal on, drive turned up, and tone turned up slightly, it produces bright crunchy mids with smooth highs and a clean bass.
+
+You can also turn the drive down and the volume up to use the pedal as a boost, either straight into the amp or into another drive or distortion pedal. At minimum drive the TS9 still has about 12× gain, so it clips a little, but most of the distortion now comes from whatever it's pushing into. The bass cut from the gain stage and the treble cut from the tone section give it that mid hump, which tightens up the low end going into a high-gain amp or distortion pedal.
+
+This makes the TS9 much more versatile than I assumed and I'm most likely going to be using it as a boost in the future.
+
+**Pentatonic scale**
+
+Clean:
+<audio controls preload="metadata" src="/blog/ts9/pentatonic-clean.mp3" style={{ width: "100%" }} />
+
+Pedal on:
+<audio controls preload="metadata" src="/blog/ts9/pentatonic-on.mp3" style={{ width: "100%" }} />
+
+**Lick**
+
+(This one was recorded with a different mic, so it's a bit quieter.)
+
+Clean:
+<audio controls preload="metadata" src="/blog/ts9/lick-clean.mp3" style={{ width: "100%" }} />
+
+Pedal on:
+<audio controls preload="metadata" src="/blog/ts9/lick-on.mp3" style={{ width: "100%" }} />
