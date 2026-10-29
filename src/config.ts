@@ -34,6 +34,17 @@ export const projects: Project[] = [
     },
   },
   {
+    title: "Seer",
+    description:
+      "Highly available, self-hosted status pages and uptime monitoring",
+    tags: ["Go", "TypeScript", "PostgreSQL", "Kubernetes"],
+    href: "https://github.com/ArnoldVanN/seer",
+    image: {
+      src: "/projects/seer.webp",
+      alt: "Seer endpoint page with uptime, availability bars and a response time chart",
+    },
+  },
+  {
     title: "Home Ops",
     description:
       "GitOps-managed home Kubernetes cluster hosting my personal sites",
@@ -41,7 +52,7 @@ export const projects: Project[] = [
     href: "https://github.com/ArnoldVanN/home-ops",
     image: {
       src: "/projects/home-ops.webp",
-      alt: "Status page showing uptime of the sites hosted on home-ops",
+      alt: "Seer status page showing uptime of the sites and services on home-ops",
     },
   },
   {
